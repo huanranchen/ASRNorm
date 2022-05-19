@@ -28,6 +28,8 @@ class ASRNorm(nn.Module):
         :param x: N,C,H,D
         :return:
         '''
+        lambda_1 = torch.sigmoid(self.lambda_1)
+        lambda_2 = torch.sigmoid(self.lambda_2)
         N, C, H, D = x.shape
         x = x.permute(0, 2, 3, 1).reshape(-1, C)
         mean = x.mean(0)
@@ -35,8 +37,8 @@ class ASRNorm(nn.Module):
         standard_encoded = F.relu(self.standard_encoder(x))
         asr_mean = self.standard_mean_decoder(standard_encoded)
         asr_var = F.relu(self.standard_var_decoder(standard_encoded))
-        mean = self.lambda_1 * asr_mean + (1 - self.lambda_1) * mean
-        var = self.lambda_2 * asr_var + (1 - self.lambda_2) * var
+        mean = lambda_1 * asr_mean + (1 - lambda_1) * mean
+        var = lambda_2 * asr_var + (1 - lambda_2) * var
         x = (x - mean) / (var + self.eps)
 
         rescale_encoded = F.relu(self.rescale_encoder(x))
