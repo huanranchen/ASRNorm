@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 
 class ASRNorm(nn.Module):
-    def __init__(self, dim, eps=1e-5):
+    def __init__(self, dim, eps=1e-6):
         '''
 
         :param dim: C of N,C,H,D
@@ -12,15 +12,18 @@ class ASRNorm(nn.Module):
         super(ASRNorm, self).__init__()
         self.eps = eps
 
-        self.standard_encoder = nn.Linear(dim, dim // 2)
+        self.standard_encoder = nn.Linear(dim, dim // 16)
         self.rescale_encoder = nn.Linear(dim, dim // 16)
-        self.standard_mean_decoder = nn.Linear(dim // 2, dim)
-        self.standard_var_decoder = nn.Linear(dim // 2, dim)
+        self.standard_mean_decoder = nn.Linear(dim // 16, dim)
+        self.standard_var_decoder = nn.Linear(dim // 16, dim)
         self.rescale_mean_decoder = nn.Linear(dim // 16, dim)
         self.rescale_var_decoder = nn.Linear(dim // 16, dim)
 
-        self.lambda_1 = nn.Parameter(torch.zeros(dim))
-        self.lambda_2 = nn.Parameter(torch.zeros(dim))
+        self.lambda_1 = nn.Parameter(torch.zeros(dim) - 5)
+        self.lambda_2 = nn.Parameter(torch.zeros(dim) - 5)
+
+        self.bias_1 = nn.Parameter(torch.zeros(dim))
+        self.bias_2 = nn.Parameter(torch.ones(dim))
 
     def forward(self, x):
         '''
@@ -39,14 +42,14 @@ class ASRNorm(nn.Module):
         asr_var = F.relu(self.standard_var_decoder(standard_encoded))
         mean = lambda_1 * asr_mean + (1 - lambda_1) * mean
         var = lambda_2 * asr_var + (1 - lambda_2) * var
+
         x = (x - mean) / (var + self.eps)
 
         rescale_encoded = F.relu(self.rescale_encoder(x))
-        asr_mean = torch.tanh(self.rescale_mean_decoder(rescale_encoded))
-        asr_var = torch.sigmoid(self.rescale_var_decoder(rescale_encoded))
-
-        x = x * asr_mean + asr_var
-
+        asr_mean = torch.tanh(self.rescale_mean_decoder(rescale_encoded)) + self.bias_1
+        asr_var = torch.sigmoid(self.rescale_var_decoder(rescale_encoded)) + self.bias_2
+        # print(asr_mean, asr_var)
+        x = x * asr_var + asr_mean
         x = x.reshape(N, H, D, C)
         x = x.permute(0, 3, 1, 2)
         return x
