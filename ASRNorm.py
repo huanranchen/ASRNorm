@@ -19,8 +19,8 @@ class ASRNorm(nn.Module):
         self.rescale_mean_decoder = nn.Linear(dim // 16, dim)
         self.rescale_var_decoder = nn.Linear(dim // 16, dim)
 
-        self.lambda_1 = nn.Parameter(torch.zeros(dim) - 5)
-        self.lambda_2 = nn.Parameter(torch.zeros(dim) - 5)
+        self.lambda_1 = nn.Parameter(torch.zeros(dim) - 2)
+        self.lambda_2 = nn.Parameter(torch.zeros(dim) - 2)
 
         self.bias_1 = nn.Parameter(torch.zeros(dim))
         self.bias_2 = nn.Parameter(torch.ones(dim))
@@ -52,4 +52,5 @@ class ASRNorm(nn.Module):
         x = x * asr_var + asr_mean
         x = x.reshape(N, H, D, C)
         x = x.permute(0, 3, 1, 2)
+
         return x
