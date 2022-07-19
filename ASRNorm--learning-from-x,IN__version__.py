@@ -47,7 +47,7 @@ class ASRNorm(nn.Module):
         asr_mean = torch.tanh(
             self.rescale_mean_decoder(F.relu(self.rescale_encoder(x.permute(0, 2, 1))))) + self.bias_1
         asr_var = torch.sigmoid(
-            self.rescale_var_decoder(F.relu(self.rescale_encoder(x.permute(0, 2, 1))))).squeeze() + self.bias_2
+            self.rescale_var_decoder(F.relu(self.rescale_encoder(x.permute(0, 2, 1))))) + self.bias_2
         x = x * asr_var.permute(0, 2, 1) + asr_mean.permute(0, 2, 1)
         x = x.reshape(N, C, H, D)
 
