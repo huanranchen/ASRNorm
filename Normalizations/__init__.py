@@ -1,2 +1,2 @@
-from .ASRBnrom import *
-from .ASRInrom import *
+from .ASRNormBN import *
+from .ASRNormIN import *

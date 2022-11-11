@@ -3,13 +3,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class ASRNorm(nn.Module):
+class ASRNormIN(nn.Module):
     def __init__(self, dim, eps=1e-5):
         '''
 
         :param dim: C of N,C,H,D
         '''
-        super(ASRNorm, self).__init__()
+        super(ASRNormIN, self).__init__()
         self.eps = eps
 
         self.standard_encoder = nn.Linear(dim, dim // 16)

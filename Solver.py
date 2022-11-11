@@ -99,12 +99,12 @@ class Solver():
 
 if __name__ == '__main__':
     from torchvision.models import resnet50
-    from Normalizations import ASRInrom, ASRBnrom
+    from Normalizations import ASRNormBN, ASRNormIN
 
-    a = resnet50(num_classes=100, norm_layer=ASRBnrom)
+    a = resnet50(num_classes=100, norm_layer=ASRNormBN)
     from data import get_CIFAR100_train, get_CIFAR100_test, get_someset_loader
 
-    train_loader = get_CIFAR100_train(batch_size=128)
+    train_loader = get_CIFAR100_train(batch_size=256)
     test_loader = get_CIFAR100_test()
 
     w = Solver(a)
