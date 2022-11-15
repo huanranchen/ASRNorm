@@ -1,5 +1,8 @@
 """ShuffleNetV2 in PyTorch.
 See the paper "ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design" for more details.
+
+
+adding hyperparameter norm_layer: Huanran Chen
 """
 import torch
 import torch.nn as nn
@@ -31,13 +34,13 @@ class SplitBlock(nn.Module):
 
 
 class BasicBlock(nn.Module):
-    def __init__(self, in_channels, split_ratio=0.5, is_last=False):
+    def __init__(self, in_channels, split_ratio=0.5, is_last=False, norm_layer=nn.BatchNorm2d):
         super(BasicBlock, self).__init__()
         self.is_last = is_last
         self.split = SplitBlock(split_ratio)
         in_channels = int(in_channels * split_ratio)
         self.conv1 = nn.Conv2d(in_channels, in_channels, kernel_size=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(in_channels)
+        self.bn1 = norm_layer(in_channels)
         self.conv2 = nn.Conv2d(
             in_channels,
             in_channels,
@@ -47,9 +50,9 @@ class BasicBlock(nn.Module):
             groups=in_channels,
             bias=False,
         )
-        self.bn2 = nn.BatchNorm2d(in_channels)
+        self.bn2 = norm_layer(in_channels)
         self.conv3 = nn.Conv2d(in_channels, in_channels, kernel_size=1, bias=False)
-        self.bn3 = nn.BatchNorm2d(in_channels)
+        self.bn3 = norm_layer(in_channels)
         self.shuffle = ShuffleBlock()
 
     def forward(self, x):
@@ -115,7 +118,7 @@ class DownBlock(nn.Module):
 
 
 class ShuffleNetV2(nn.Module):
-    def __init__(self, net_size, num_classes=100):
+    def __init__(self, net_size, num_classes=100, norm_layer=nn.BatchNorm2d):
         super(ShuffleNetV2, self).__init__()
         out_channels = configs[net_size]["out_channels"]
         num_blocks = configs[net_size]["num_blocks"]
@@ -125,9 +128,9 @@ class ShuffleNetV2(nn.Module):
         self.conv1 = nn.Conv2d(3, 24, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(24)
         self.in_channels = 24
-        self.layer1 = self._make_layer(out_channels[0], num_blocks[0])
-        self.layer2 = self._make_layer(out_channels[1], num_blocks[1])
-        self.layer3 = self._make_layer(out_channels[2], num_blocks[2])
+        self.layer1 = self._make_layer(out_channels[0], num_blocks[0], norm_layer)
+        self.layer2 = self._make_layer(out_channels[1], num_blocks[1], norm_layer)
+        self.layer3 = self._make_layer(out_channels[2], num_blocks[2], norm_layer)
         self.conv2 = nn.Conv2d(
             out_channels[2], out_channels[3], kernel_size=1, stride=1, padding=0, bias=False
         )
@@ -135,10 +138,10 @@ class ShuffleNetV2(nn.Module):
         self.linear = nn.Linear(out_channels[3], num_classes)
         self.last_channel = out_channels[3]
 
-    def _make_layer(self, out_channels, num_blocks):
+    def _make_layer(self, out_channels, num_blocks, norm_layer=nn.BatchNorm2d):
         layers = [DownBlock(self.in_channels, out_channels)]
         for i in range(num_blocks):
-            layers.append(BasicBlock(out_channels, is_last=(i == num_blocks - 1)))
+            layers.append(BasicBlock(out_channels, is_last=(i == num_blocks - 1), norm_layer=norm_layer))
             self.in_channels = out_channels
         return nn.Sequential(*layers)
 
@@ -175,7 +178,7 @@ class ShuffleNetV2(nn.Module):
 
 
 class Auxiliary_Classifier(nn.Module):
-    def __init__(self, net_size, num_classes=100):
+    def __init__(self, net_size, num_classes=100, norm_layer=nn.BatchNorm2d):
         super(Auxiliary_Classifier, self).__init__()
         out_channels = configs[net_size]["out_channels"]
         num_blocks = configs[net_size]["num_blocks"]

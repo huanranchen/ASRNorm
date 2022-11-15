@@ -1,6 +1,8 @@
 """
 MobileNetV2 implementation used in
 <Knowledge Distillation via Route Constrained Optimization>
+
+adding hyperparameter norm_layer: Huanran Chen
 """
 
 import math
@@ -46,7 +48,7 @@ def conv_1x1_bn(inp, oup):
 
 
 class InvertedResidual(nn.Module):
-    def __init__(self, inp, oup, stride, expand_ratio):
+    def __init__(self, inp, oup, stride, expand_ratio, norm_layer=nn.BatchNorm2d):
         super(InvertedResidual, self).__init__()
         self.blockname = None
 
@@ -58,7 +60,7 @@ class InvertedResidual(nn.Module):
         self.conv = nn.Sequential(
             # pw
             nn.Conv2d(inp, inp * expand_ratio, 1, 1, 0, bias=False),
-            nn.BatchNorm2d(inp * expand_ratio),
+            norm_layer(inp * expand_ratio),
             nn.ReLU(inplace=True),
             # dw
             nn.Conv2d(
@@ -70,11 +72,11 @@ class InvertedResidual(nn.Module):
                 groups=inp * expand_ratio,
                 bias=False,
             ),
-            nn.BatchNorm2d(inp * expand_ratio),
+            norm_layer(inp * expand_ratio),
             nn.ReLU(inplace=True),
             # pw-linear
             nn.Conv2d(inp * expand_ratio, oup, 1, 1, 0, bias=False),
-            nn.BatchNorm2d(oup),
+            norm_layer(oup),
         )
         self.names = ["0", "1", "2", "3", "4", "5", "6", "7"]
 
@@ -90,7 +92,8 @@ class InvertedResidual(nn.Module):
 class MobileNetV2(nn.Module):
     """mobilenetV2"""
 
-    def __init__(self, T, feature_dim, input_size=32, width_mult=1.0, remove_avg=False):
+    def __init__(self, T, feature_dim, input_size=32, width_mult=1.0, remove_avg=False,
+                 norm_layer=nn.BatchNorm2d):
         super(MobileNetV2, self).__init__()
         self.remove_avg = remove_avg
 
@@ -118,7 +121,8 @@ class MobileNetV2(nn.Module):
             layers = []
             strides = [s] + [1] * (n - 1)
             for stride in strides:
-                layers.append(InvertedResidual(input_channel, output_channel, stride, t))
+                layers.append(InvertedResidual(input_channel, output_channel, stride, t,
+                                               norm_layer=norm_layer))
                 input_channel = output_channel
             self.blocks.append(nn.Sequential(*layers))
 

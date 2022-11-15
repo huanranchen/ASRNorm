@@ -6,6 +6,9 @@ import torch.nn.functional as F
 
 """
 Original Author: Wei Yang
+
+
+adding hyperparameter norm_layer: Huanran Chen
 """
 
 __all__ = [
@@ -44,14 +47,14 @@ class Normalizer4CRD(nn.Module):
 
 
 class BasicBlock(nn.Module):
-    def __init__(self, in_planes, out_planes, stride, dropRate=0.0):
+    def __init__(self, in_planes, out_planes, stride, dropRate=0.0, norm_layer=nn.BatchNorm2d):
         super(BasicBlock, self).__init__()
-        self.bn1 = nn.BatchNorm2d(in_planes)
+        self.bn1 = norm_layer(in_planes)
         self.relu1 = nn.ReLU(inplace=True)
         self.conv1 = nn.Conv2d(
             in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False
         )
-        self.bn2 = nn.BatchNorm2d(out_planes)
+        self.bn2 = norm_layer(out_planes)
         self.relu2 = nn.ReLU(inplace=True)
         self.conv2 = nn.Conv2d(
             out_planes, out_planes, kernel_size=3, stride=1, padding=1, bias=False
@@ -59,11 +62,11 @@ class BasicBlock(nn.Module):
         self.droprate = dropRate
         self.equalInOut = in_planes == out_planes
         self.convShortcut = (
-            (not self.equalInOut)
-            and nn.Conv2d(
-                in_planes, out_planes, kernel_size=1, stride=stride, padding=0, bias=False
-            )
-            or None
+                (not self.equalInOut)
+                and nn.Conv2d(
+            in_planes, out_planes, kernel_size=1, stride=stride, padding=0, bias=False
+        )
+                or None
         )
 
     def forward(self, x):
@@ -79,16 +82,19 @@ class BasicBlock(nn.Module):
 
 
 class NetworkBlock(nn.Module):
-    def __init__(self, nb_layers, in_planes, out_planes, block, stride, dropRate=0.0):
+    def __init__(self, nb_layers, in_planes, out_planes, block, stride, dropRate=0.0,
+                 norm_layer=nn.BatchNorm2d):
         super(NetworkBlock, self).__init__()
-        self.layer = self._make_layer(block, in_planes, out_planes, nb_layers, stride, dropRate)
+        self.layer = self._make_layer(block, in_planes, out_planes,
+                                      nb_layers, stride, dropRate, norm_layer)
 
-    def _make_layer(self, block, in_planes, out_planes, nb_layers, stride, dropRate):
+    def _make_layer(self, block, in_planes, out_planes, nb_layers, stride, dropRate, norm_layer):
         layers = []
         for i in range(nb_layers):
             layers.append(
                 block(
-                    i == 0 and in_planes or out_planes, out_planes, i == 0 and stride or 1, dropRate
+                    i == 0 and in_planes or out_planes, out_planes, i == 0 and stride or 1, dropRate,
+                    norm_layer=norm_layer
                 )
             )
         return nn.Sequential(*layers)
@@ -98,7 +104,8 @@ class NetworkBlock(nn.Module):
 
 
 class WideResNet(nn.Module):
-    def __init__(self, depth, num_classes, widen_factor=1, dropRate=0.0):
+    def __init__(self, depth, num_classes, widen_factor=1, dropRate=0.0,
+                 norm_layer=nn.BatchNorm2d):
         super(WideResNet, self).__init__()
         nChannels = [16, 16 * widen_factor, 32 * widen_factor, 64 * widen_factor]
         assert (depth - 4) % 6 == 0, "depth should be 6n+4"
@@ -107,11 +114,11 @@ class WideResNet(nn.Module):
         # 1st conv before any network block
         self.conv1 = nn.Conv2d(3, nChannels[0], kernel_size=3, stride=1, padding=1, bias=False)
         # 1st block
-        self.block1 = NetworkBlock(n, nChannels[0], nChannels[1], block, 1, dropRate)
+        self.block1 = NetworkBlock(n, nChannels[0], nChannels[1], block, 1, dropRate, norm_layer)
         # 2nd block
-        self.block2 = NetworkBlock(n, nChannels[1], nChannels[2], block, 2, dropRate)
+        self.block2 = NetworkBlock(n, nChannels[1], nChannels[2], block, 2, dropRate, norm_layer)
         # 3rd block
-        self.block3 = NetworkBlock(n, nChannels[2], nChannels[3], block, 2, dropRate)
+        self.block3 = NetworkBlock(n, nChannels[2], nChannels[3], block, 2, dropRate, norm_layer)
         # global average pooling and classifier
         self.bn1 = nn.BatchNorm2d(nChannels[3])
         self.relu = nn.ReLU(inplace=True)
@@ -275,7 +282,8 @@ class WideResNet_SSKD(WideResNet):
 
 
 class WideResNet_CRD(nn.Module):
-    def __init__(self, depth, num_classes, widen_factor=1, dropRate=0.0):
+    def __init__(self, depth, num_classes, widen_factor=1, dropRate=0.0,
+                 norm_layer=nn.BatchNorm2d):
         super(WideResNet_CRD, self).__init__()
         nChannels = [16, 16 * widen_factor, 32 * widen_factor, 64 * widen_factor]
         assert (depth - 4) % 6 == 0, "depth should be 6n+4"

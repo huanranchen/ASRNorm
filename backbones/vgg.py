@@ -1,13 +1,16 @@
 """VGG for CIFAR10. FC layers are removed.
 (c) YANG, Wei
+
+
+adding hyperparameter norm_layer: Huanran Chen
 """
+
 import math
 
 import torch.nn as nn
 import torch.nn.functional as F
 
 __all__ = ["vgg13_bn_aux", "vgg13_bn", "vgg13_bn_spkd", "vgg13_bn_crd", "vgg8_bn"]
-
 
 model_urls = {
     "vgg11": "https://download.pytorch.org/models/vgg11-bbd30ac9.pth",
@@ -32,13 +35,14 @@ class Normalizer4CRD(nn.Module):
 
 
 class VGG(nn.Module):
-    def __init__(self, cfg, batch_norm=False, num_classes=1000):
+    def __init__(self, cfg, batch_norm=False, num_classes=1000,
+                 norm_layer=nn.BatchNorm2d):
         super(VGG, self).__init__()
-        self.block0 = self._make_layers(cfg[0], batch_norm, 3)
-        self.block1 = self._make_layers(cfg[1], batch_norm, cfg[0][-1])
-        self.block2 = self._make_layers(cfg[2], batch_norm, cfg[1][-1])
-        self.block3 = self._make_layers(cfg[3], batch_norm, cfg[2][-1])
-        self.block4 = self._make_layers(cfg[4], batch_norm, cfg[3][-1])
+        self.block0 = self._make_layers(cfg[0], batch_norm, 3, norm_layer)
+        self.block1 = self._make_layers(cfg[1], batch_norm, cfg[0][-1], norm_layer)
+        self.block2 = self._make_layers(cfg[2], batch_norm, cfg[1][-1], norm_layer)
+        self.block3 = self._make_layers(cfg[3], batch_norm, cfg[2][-1], norm_layer)
+        self.block4 = self._make_layers(cfg[4], batch_norm, cfg[3][-1], norm_layer)
 
         self.pool0 = nn.MaxPool2d(kernel_size=2, stride=2)
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
@@ -105,7 +109,7 @@ class VGG(nn.Module):
             return x
 
     @staticmethod
-    def _make_layers(cfg, batch_norm=False, in_channels=3):
+    def _make_layers(cfg, batch_norm=False, in_channels=3, norm_layer=nn.BatchNorm2d):
         layers = []
         for v in cfg:
             if v == "M":
@@ -113,7 +117,7 @@ class VGG(nn.Module):
             else:
                 conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
                 if batch_norm:
-                    layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
+                    layers += [conv2d, norm_layer(v), nn.ReLU(inplace=True)]
                 else:
                     layers += [conv2d, nn.ReLU(inplace=True)]
                 in_channels = v
