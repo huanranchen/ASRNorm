@@ -99,15 +99,16 @@ class Solver():
 
 
 if __name__ == '__main__':
-    from backbones import wrn_16_2
+    from backbones import resnet32
     from torchvision.models import resnet50
     from Normalizations import ASRNormBN, ASRNormIN
 
-    a = resnet50(num_classes=100)
-    from data import get_CIFAR100_train, get_CIFAR100_test, get_someset_loader
+    a = resnet32(num_classes=10, norm_layer = ASRNormIN)
+    from data import get_CIFAR100_train, get_CIFAR100_test, get_someset_loader, \
+        get_CIFAR10_train, get_CIFAR10_test
 
-    train_loader = get_CIFAR100_train(batch_size=256)
-    test_loader = get_CIFAR100_test()
+    train_loader = get_CIFAR10_train(batch_size=256, augment=True)
+    test_loader = get_CIFAR10_test()
 
     w = Solver(a)
     w.train(train_loader)
