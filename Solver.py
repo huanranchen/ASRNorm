@@ -15,7 +15,8 @@ def default_loss(x, y):
 
 class Solver():
     def __init__(self, student: nn.Module,
-                 loss_function: Callable or None = None, optimizer: torch.optim.Optimizer or None = None,
+                 loss_function: Callable or None = None,
+                 optimizer: torch.optim.Optimizer or None = None,
                  scheduler=None,
                  device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'),
                  eval_loader = None):
@@ -37,7 +38,7 @@ class Solver():
 
     def train(self,
               loader: DataLoader,
-              total_epoch=120,
+              total_epoch=90,
               fp16=False,
               ):
         '''
@@ -98,10 +99,11 @@ class Solver():
 
 
 if __name__ == '__main__':
+    from backbones import wrn_16_2
     from torchvision.models import resnet50
     from Normalizations import ASRNormBN, ASRNormIN
 
-    a = resnet50(num_classes=100, norm_layer=ASRNormBN)
+    a = resnet50(num_classes=100)
     from data import get_CIFAR100_train, get_CIFAR100_test, get_someset_loader
 
     train_loader = get_CIFAR100_train(batch_size=256)

@@ -19,11 +19,15 @@ class ASRNormBN(nn.Module):
         self.rescale_mean_decoder = nn.Linear(dim // 16, dim)
         self.rescale_var_decoder = nn.Linear(dim // 16, dim)
 
-        self.lambda_1 = nn.Parameter(torch.zeros(dim))
-        self.lambda_2 = nn.Parameter(torch.zeros(dim))
+        self.lambda_1 = nn.Parameter(torch.zeros(dim)-5)
+        self.lambda_2 = nn.Parameter(torch.zeros(dim)-5)
 
         self.bias_1 = nn.Parameter(torch.zeros(dim))
-        self.bias_2 = nn.Parameter(torch.ones(dim))
+        # training image net in one hour suggest to initialize as 0
+        self.bias_2 = nn.Parameter(torch.zeros(dim))
+
+    def init(self):
+        pass
 
     def forward(self, x):
         '''
@@ -44,9 +48,11 @@ class ASRNormBN(nn.Module):
 
         x = (x - mean) / (var + self.eps)
 
-        asr_mean = torch.tanh(self.rescale_mean_decoder(F.relu(self.rescale_encoder(real_mean.view(1, -1))))).squeeze() + self.bias_1
+        asr_mean = torch.tanh(self.rescale_mean_decoder(
+            F.relu(self.rescale_encoder(real_mean.view(1, -1))))).squeeze() + self.bias_1
         asr_var = torch.sigmoid(
-            self.rescale_var_decoder(F.relu(self.rescale_encoder(real_var.view(1, -1))))).squeeze() + self.bias_2
+            self.rescale_var_decoder(
+                F.relu(self.rescale_encoder(real_var.view(1, -1))))).squeeze() + self.bias_2
         x = x * asr_var + asr_mean
         x = x.reshape(N, H, D, C)
         x = x.permute(0, 3, 1, 2)
