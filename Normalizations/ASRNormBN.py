@@ -19,12 +19,13 @@ class ASRNormBN(nn.Module):
         self.rescale_mean_decoder = nn.Linear(dim // 16, dim)
         self.rescale_var_decoder = nn.Linear(dim // 16, dim)
 
-        self.lambda_1 = nn.Parameter(torch.zeros(dim)-5)
-        self.lambda_2 = nn.Parameter(torch.zeros(dim)-5)
+        self.lambda_1 = nn.Parameter(torch.zeros(dim) - 5)
+        self.lambda_2 = nn.Parameter(torch.zeros(dim) - 5)
 
         self.bias_1 = nn.Parameter(torch.zeros(dim))
         # training image net in one hour suggest to initialize as 0
         self.bias_2 = nn.Parameter(torch.zeros(dim))
+        self.drop_out = nn.Dropout(p=0.2)
 
     def init(self):
         pass
@@ -41,18 +42,20 @@ class ASRNormBN(nn.Module):
         x = x.permute(0, 2, 3, 1).reshape(-1, C)
         real_mean = x.mean(0)
         real_var = x.std(0)
-        asr_mean = self.standard_mean_decoder(F.relu(self.standard_encoder(real_mean.view(1, -1)))).squeeze()
-        asr_var = F.relu(self.standard_var_decoder(F.relu(self.standard_encoder(real_var.view(1, -1))))).squeeze()
+        asr_mean = self.standard_mean_decoder(
+            F.relu(self.standard_encoder(self.drop_out(real_mean.view(1, -1))))).squeeze()
+        asr_var = F.relu(
+            self.standard_var_decoder(F.relu(self.standard_encoder(self.drop_out(real_var.view(1, -1)))))).squeeze()
         mean = lambda_1 * asr_mean + (1 - lambda_1) * real_mean
         var = lambda_2 * asr_var + (1 - lambda_2) * real_var
 
         x = (x - mean) / (var + self.eps)
 
         asr_mean = torch.tanh(self.rescale_mean_decoder(
-            F.relu(self.rescale_encoder(real_mean.view(1, -1))))).squeeze() + self.bias_1
+            F.relu(self.rescale_encoder(self.drop_out(real_mean.view(1, -1)))))).squeeze() + self.bias_1
         asr_var = torch.sigmoid(
             self.rescale_var_decoder(
-                F.relu(self.rescale_encoder(real_var.view(1, -1))))).squeeze() + self.bias_2
+                F.relu(self.rescale_encoder(self.drop_out(real_var.view(1, -1)))))).squeeze() + self.bias_2
         x = x * asr_var + asr_mean
         x = x.reshape(N, H, D, C)
         x = x.permute(0, 3, 1, 2)

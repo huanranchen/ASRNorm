@@ -19,7 +19,7 @@ class Solver():
                  optimizer: torch.optim.Optimizer or None = None,
                  scheduler=None,
                  device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'),
-                 eval_loader = None):
+                 eval_loader=None):
         self.student = student
         self.criterion = loss_function if loss_function is not None else default_loss
         self.optimizer = optimizer if optimizer is not None else default_optimizer(self.student)
@@ -103,12 +103,13 @@ if __name__ == '__main__':
     from torchvision.models import resnet50
     from Normalizations import ASRNormBN, ASRNormIN
 
-    a = resnet32(num_classes=10, norm_layer = ASRNormIN)
+    a = resnet32(num_classes=10, norm_layer=ASRNormBN)
     from data import get_CIFAR100_train, get_CIFAR100_test, get_someset_loader, \
         get_CIFAR10_train, get_CIFAR10_test
 
     train_loader = get_CIFAR10_train(batch_size=256, augment=True)
     test_loader = get_CIFAR10_test()
 
+    a.load_state_dict(torch.load('student.pth'))
     w = Solver(a)
     w.train(train_loader)
