@@ -25,7 +25,7 @@ class ASRNormBN(nn.Module):
         self.bias_1 = nn.Parameter(torch.zeros(dim))
         # training image net in one hour suggest to initialize as 0
         self.bias_2 = nn.Parameter(torch.zeros(dim))
-        self.drop_out = nn.Dropout(p=0.2)
+        self.drop_out = nn.Dropout(p=0.1)
 
     def init(self):
         pass
