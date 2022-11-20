@@ -119,11 +119,11 @@ class Solver():
 
 
 if __name__ == '__main__':
-    from backbones import resnet32
+    from backbones import mobilenetV2
     from torchvision.models import resnet50
     from Normalizations import ASRNormBN, ASRNormIN
 
-    a = resnet32(num_classes=10, norm_layer=ASRNormBN)
+    a = mobilenetV2(num_classes=10, norm_layer=ASRNormBN)
     from data import get_CIFAR100_train, get_CIFAR100_test, get_someset_loader, \
         get_CIFAR10_train, get_CIFAR10_test
 

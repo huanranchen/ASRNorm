@@ -61,7 +61,7 @@ class InvertedResidual(nn.Module):
             # pw
             nn.Conv2d(inp, inp * expand_ratio, 1, 1, 0, bias=False),
             norm_layer(inp * expand_ratio),
-            nn.ReLU(inplace=True),
+            nn.ReLU(),
             # dw
             nn.Conv2d(
                 inp * expand_ratio,
@@ -73,10 +73,10 @@ class InvertedResidual(nn.Module):
                 bias=False,
             ),
             norm_layer(inp * expand_ratio),
-            nn.ReLU(inplace=True),
+            nn.ReLU(),
             # pw-linear
             nn.Conv2d(inp * expand_ratio, oup, 1, 1, 0, bias=False),
-            norm_layer(oup),
+            nn.BatchNorm2d(oup),
         )
         self.names = ["0", "1", "2", "3", "4", "5", "6", "7"]
 
