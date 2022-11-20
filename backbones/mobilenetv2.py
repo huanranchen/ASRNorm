@@ -431,13 +431,13 @@ class MobileNetV2_CRD(nn.Module):
                 m.bias.data.zero_()
 
 
-def mobilenetv2_T_w(T, W, feature_dim=100):
-    model = MobileNetV2(T=T, feature_dim=feature_dim, width_mult=W)
+def mobilenetv2_T_w(T, W, feature_dim=100, **kwargs):
+    model = MobileNetV2(T=T, feature_dim=feature_dim, width_mult=W, **kwargs)
     return model
 
 
-def mobilenetV2(num_classes):
-    return mobilenetv2_T_w(6, 0.5, num_classes)
+def mobilenetV2(num_classes, **kwargs):
+    return mobilenetv2_T_w(6, 0.5, num_classes, **kwargs)
 
 
 def mobilenetV2_aux(num_classes):

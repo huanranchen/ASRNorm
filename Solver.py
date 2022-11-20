@@ -52,7 +52,16 @@ class Solver():
         from torch.cuda.amp import autocast, GradScaler
         scaler = GradScaler()
         self.student.train()
+        # lambda_1, lambda_2 = [], []
         for epoch in range(1, total_epoch + 1):
+            # now_lambda_1, now_lambda_2 = [], []
+            # from Normalizations import ASRNormBN
+            # for module in self.student.modules():
+            #     if isinstance(module, ASRNormBN):
+            #         now_lambda_1.append(torch.sum(torch.sigmoid(module.lambda_1)).item() / module.lambda_1.shape[0])
+            #         now_lambda_2.append(torch.sum(torch.sigmoid(module.lambda_2)).item() / module.lambda_2.shape[0])
+            # lambda_1.append(sum(now_lambda_1) / len(now_lambda_1))
+            # lambda_2.append(sum(now_lambda_2) / len(now_lambda_2))
             train_loss = 0
             train_acc = 0
             pbar = tqdm(loader)
@@ -97,6 +106,17 @@ class Solver():
             print(f'epoch {epoch}, loss = {train_loss}, acc = {train_acc}')
             torch.save(self.student.state_dict(), 'student.pth')
 
+        # from matplotlib import pyplot as plt
+        # plt.plot(list(range(len(lambda_1))), lambda_1)
+        # plt.legend('lambda_1')
+        # plt.plot(list(range(len(lambda_2))), lambda_2)
+        # plt.legend('lambda_2')
+        # plt.xlabel('epoch')
+        # plt.ylabel('mean')
+        # plt.show()
+        # plt.savefig('1')
+
+
 
 if __name__ == '__main__':
     from backbones import resnet32
@@ -110,6 +130,5 @@ if __name__ == '__main__':
     train_loader = get_CIFAR10_train(batch_size=256, augment=True)
     test_loader = get_CIFAR10_test()
 
-    a.load_state_dict(torch.load('student.pth'))
     w = Solver(a)
     w.train(train_loader)
