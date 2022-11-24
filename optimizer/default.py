@@ -1,8 +1,8 @@
 import torch
 from torch import nn
 
-def default_optimizer(model: nn.Module, lr=4e-3, ) -> torch.optim.Optimizer:
-    return torch.optim.AdamW(model.parameters(), lr=lr)
+def default_optimizer(model: nn.Module, lr=1e-1, ) -> torch.optim.Optimizer:
+    return torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, nesterov=True)
 
 
 def default_lr_scheduler(optimizer):
@@ -13,7 +13,7 @@ def default_lr_scheduler(optimizer):
         Bootstrap Generalization Ability from Loss Landscape Perspective
         '''
 
-        def __init__(self, optimizer, loss_threshold=0.02, loss_ratio_threshold=0.02, decay_rate=0.9):
+        def __init__(self, optimizer, loss_threshold=0.05, loss_ratio_threshold=0.05, decay_rate=0.9):
             self.optimizer = optimizer
             self.loss_threshold = loss_threshold
             self.decay_rate = decay_rate

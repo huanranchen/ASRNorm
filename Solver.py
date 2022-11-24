@@ -101,7 +101,7 @@ class Solver():
             train_loss /= len(loader)
             train_acc /= len(loader)
 
-            # self.scheduler.step(train_loss)
+            self.scheduler.step(train_loss)
 
             print(f'epoch {epoch}, loss = {train_loss}, acc = {train_acc}')
             torch.save(self.student.state_dict(), 'student.pth')
@@ -119,11 +119,11 @@ class Solver():
 
 
 if __name__ == '__main__':
-    from backbones import mobilenetV2
+    from backbones import mobilenetV2, ShuffleV2
     from torchvision.models import resnet50
     from Normalizations import ASRNormBN, ASRNormIN
 
-    a = mobilenetV2(num_classes=10, norm_layer=ASRNormBN)
+    a = ShuffleV2(num_classes=10, norm_layer=ASRNormBN)
     from data import get_CIFAR100_train, get_CIFAR100_test, get_someset_loader, \
         get_CIFAR10_train, get_CIFAR10_test
 
