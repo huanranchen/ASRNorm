@@ -13,7 +13,7 @@ def default_lr_scheduler(optimizer):
         Bootstrap Generalization Ability from Loss Landscape Perspective
         '''
 
-        def __init__(self, optimizer, loss_threshold=0.05, loss_ratio_threshold=0.05, decay_rate=0.9):
+        def __init__(self, optimizer, loss_threshold=0.02, loss_ratio_threshold=0.02, decay_rate=0.9):
             self.optimizer = optimizer
             self.loss_threshold = loss_threshold
             self.decay_rate = decay_rate

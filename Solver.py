@@ -38,7 +38,7 @@ class Solver():
 
     def train(self,
               loader: DataLoader,
-              total_epoch=90,
+              total_epoch=200,
               fp16=False,
               ):
         '''
@@ -132,3 +132,6 @@ if __name__ == '__main__':
 
     w = Solver(a)
     w.train(train_loader)
+
+    from tester import test_acc
+    test_acc(w.student, test_loader)
