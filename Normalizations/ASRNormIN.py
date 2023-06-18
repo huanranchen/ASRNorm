@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn import init
 
 
 class ASRNormIN(nn.Module):
@@ -11,48 +12,93 @@ class ASRNormIN(nn.Module):
         '''
         super(ASRNormIN, self).__init__()
         self.eps = eps
+        self.num_channels = dim
+        self.stan_mid_channel = self.num_channels // 2
+        self.rsc_mid_channel = self.num_channels // 16
 
-        self.standard_encoder = nn.Linear(dim, dim // 16)
-        self.rescale_encoder = nn.Linear(dim, dim // 16)
-        self.standard_mean_decoder = nn.Linear(dim // 16, dim)
-        self.standard_var_decoder = nn.Linear(dim // 16, dim)
-        self.rescale_mean_decoder = nn.Linear(dim // 16, dim)
-        self.rescale_var_decoder = nn.Linear(dim // 16, dim)
+        self.relu = nn.ReLU(True)
+        self.tanh = nn.Tanh()
+        self.sigmoid = nn.Sigmoid()
 
-        self.lambda_1 = nn.Parameter(torch.zeros(dim) - 5)
-        self.lambda_2 = nn.Parameter(torch.zeros(dim) - 5)
+        self.standard_encoder = nn.Linear(dim, self.stan_mid_channel)  # 16
+        self.rescale_encoder = nn.Linear(dim, self.rsc_mid_channel)
 
-        self.bias_1 = nn.Parameter(torch.zeros(dim))
-        self.bias_2 = nn.Parameter(torch.ones(dim))
+        # standardization
+        self.standard_mean_decoder = nn.Sequential(
+            self.relu,
+            nn.Linear(self.stan_mid_channel, dim)
+        )
+
+        self.standard_std_decoder = nn.Sequential(
+            self.relu,
+            nn.Linear(self.stan_mid_channel, dim),
+            self.relu
+        )
+
+        # Rescaling
+        self.rescale_beta_decoder = nn.Sequential(
+            self.relu,
+            nn.Linear(self.rsc_mid_channel, dim),
+            self.tanh
+        )
+
+        self.rescale_gamma_decoder = nn.Sequential(
+            self.relu,
+            nn.Linear(self.rsc_mid_channel, dim),
+            self.sigmoid
+        )
+
+        self.lambda_mu = nn.Parameter(torch.empty(1))
+        self.lambda_sigma = nn.Parameter(torch.empty(1))
+
+        self.lambda_beta = nn.Parameter(torch.empty(1))
+        self.lambda_gamma = nn.Parameter(torch.empty(1))
+
+        self.bias_beta = nn.Parameter(torch.empty(dim))
+        self.bias_gamma = nn.Parameter(torch.empty(dim))
+
+        # init lambda and bias
+        with torch.no_grad():
+            init.constant_(self.lambda_mu, self.sigmoid(torch.tensor(-3)))
+            init.constant_(self.lambda_sigma, self.sigmoid(torch.tensor(-3)))
+            init.constant_(self.lambda_beta, self.sigmoid(torch.tensor(-5)))
+            init.constant_(self.lambda_gamma, self.sigmoid(torch.tensor(-5)))
+            init.constant_(self.bias_beta, 0.)
+            init.constant_(self.bias_gamma, 1.)
 
     def forward(self, x):
         '''
 
-        :param x: N,C,H,D
+        :param x: N,C,H,W
         :return:
         '''
-        lambda_1 = torch.sigmoid(self.lambda_1)
-        lambda_2 = torch.sigmoid(self.lambda_2)
-        N, C, H, D = x.shape
-        x = x.reshape(N, C, H * D)
-        real_mean = x.mean(2)
-        real_var = x.std(2)
-        asr_mean = self.standard_mean_decoder(F.relu(self.standard_encoder(real_mean))).squeeze()
-        asr_var = F.relu(self.standard_var_decoder(F.relu(self.standard_encoder(real_var)))).squeeze()
-        mean = lambda_1 * asr_mean + (1 - lambda_1) * real_mean
-        var = lambda_2 * asr_var + (1 - lambda_2) * real_var
 
-        x = (x - mean.unsqueeze(2)) / (var.unsqueeze(2) + self.eps)
-        if torch.sum(x > 1e6) > 0:
-            print('-' * 100)
-            print(x.std(2))
-            print('warning! x is so big')
+        N, C, H, W = x.size()
+        x_mean = torch.mean(x, dim=(2, 3))
+        x_std = torch.sqrt(torch.var(x, dim=(2, 3))) + self.eps
 
-        asr_mean = torch.tanh(
-            self.rescale_mean_decoder(F.relu(self.rescale_encoder(real_mean)))).squeeze() + self.bias_1
-        asr_var = torch.sigmoid(
-            self.rescale_var_decoder(F.relu(self.rescale_encoder(real_var)))).squeeze() + self.bias_2
-        x = x * asr_var.unsqueeze(2) + asr_mean.unsqueeze(2)
-        x = x.reshape(N, C, H, D)
+        # standardization
+        x_standard_mean = self.standard_mean_decoder(self.standard_encoder(x_mean))
+        x_standard_std = self.standard_std_decoder(self.standard_encoder(x_std))
+
+        mean = self.lambda_mu * x_standard_mean + (1 - self.lambda_mu) * x_mean
+        std = self.lambda_sigma * x_standard_std + (1 - self.lambda_sigma) * x_std
+
+        mean = mean.reshape((N, C, 1, 1))
+        std = std.reshape((N, C, 1, 1))
+
+        x = (x - mean) / std
+
+        # rescaling
+        x_rescaling_beta = self.rescale_beta_decoder(self.rescale_encoder(x_mean))
+        x_rescaling_gamma = self.rescale_gamma_decoder(self.rescale_encoder(x_std))
+
+        beta = self.lambda_beta * x_rescaling_beta + self.bias_beta
+        gamma = self.lambda_gamma * x_rescaling_gamma + self.bias_gamma
+
+        beta = beta.reshape((N, C, 1, 1))
+        gamma = gamma.reshape((N, C, 1, 1))
+
+        x = x * gamma + beta
 
         return x
