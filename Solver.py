@@ -121,7 +121,7 @@ class Solver():
 if __name__ == '__main__':
     from backbones import mobilenetV2, ShuffleV2
     from torchvision.models import resnet50
-    from Normalizations import ASRNormBN, ASRNormIN, ASRNormRealBN
+    from Normalizations import ASRNormBN2d, ASRNormIN, ASRNormRealBN
 
     a = ShuffleV2(num_classes=10, norm_layer=ASRNormRealBN)
     from data import get_CIFAR100_train, get_CIFAR100_test, get_someset_loader, \
