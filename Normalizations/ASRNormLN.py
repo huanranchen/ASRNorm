@@ -4,13 +4,13 @@ import torch.nn.functional as F
 from torch.nn import init
 
 
-class ASRNormBN2d(nn.Module):
+class ASRNormLN(nn.Module):
     def __init__(self, dim, eps=1e-6):
         '''
 
         :param dim: C of N,C,H,D
         '''
-        super(ASRNormBN2d, self).__init__()
+        super(ASRNormLN, self).__init__()
         self.eps = eps
         self.num_channels = dim
         self.stan_mid_channel = self.num_channels // 2
@@ -105,4 +105,3 @@ class ASRNormBN2d(nn.Module):
         x = x * gamma + beta
 
         return x
-
