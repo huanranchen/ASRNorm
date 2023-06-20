@@ -23,7 +23,7 @@ class Solver():
         self.student = student
         self.criterion = loss_function if loss_function is not None else default_loss
         self.optimizer = optimizer if optimizer is not None else default_optimizer(self.student)
-        self.scheduler = scheduler if scheduler is not None else default_lr_scheduler(self.optimizer)
+        self.scheduler = scheduler if scheduler is not None else CosineLRS(self.optimizer)
         self.device = device
 
         # initialization
@@ -37,7 +37,8 @@ class Solver():
         # self.writer = SummaryWriter(log_dir="runs/Solver", flush_secs=120)
 
     def train(self,
-              loader: DataLoader,
+              train_loader: DataLoader,
+              validation_loader: DataLoader,
               total_epoch=200,
               fp16=False,
               ):
@@ -64,7 +65,12 @@ class Solver():
             # lambda_2.append(sum(now_lambda_2) / len(now_lambda_2))
             train_loss = 0
             train_acc = 0
-            pbar = tqdm(loader)
+
+            validation_loss = 0
+            validation_acc = 0
+
+            # train
+            pbar = tqdm(train_loader)
             for step, (x, y) in enumerate(pbar, 1):
                 x, y = x.to(self.device), y.to(self.device)
 
@@ -98,13 +104,43 @@ class Solver():
                 if step % 10 == 0:
                     pbar.set_postfix_str(f'loss={train_loss / step}, acc={train_acc / step}')
 
-            train_loss /= len(loader)
-            train_acc /= len(loader)
+            train_loss /= len(train_loader)
+            train_acc /= len(train_loader)
+
+
+            # validation
+            vbar = tqdm(validation_loader, colour='yellow')
+            self.student.eval()
+            with torch.no_grad():
+                for step, (x, y) in enumerate(vbar, 1):
+                    x, y = x.to(self.device), y.to(self.device)
+                    if fp16:
+                        with autocast():
+                            student_out = self.student(x)  # N, 60
+                            _, pre = torch.max(student_out, dim=1)
+                            loss = self.criterion(student_out, y)
+                    else:
+                        student_out = self.student(x)  # N, 60
+                        _, pre = torch.max(student_out, dim=1)
+                        loss = self.criterion(student_out, y)
+
+                    if pre.shape != y.shape:
+                        _, y = torch.max(y, dim=1)
+                    validation_acc += (torch.sum(pre == y).item()) / y.shape[0]
+                    validation_loss += loss.item()
+
+                    if step % 10 == 0:
+                        vbar.set_postfix_str(f'loss={validation_loss / step}, acc={validation_acc / step}')
+
+                validation_loss /= len(validation_loader)
+                validation_acc /= len(validation_loader)
 
             # self.scheduler.step(train_loss)
-            self.scheduler.step(train_loss, epoch)
+            self.scheduler.step(epoch)
 
-            print(f'epoch {epoch}, loss = {train_loss}, acc = {train_acc}')
+            print(f'epoch {epoch}, train_loss = {train_loss}, train_acc = {train_acc}')
+            print(f'epoch {epoch}, validation_loss = {validation_loss}, validation_acc = {validation_acc}')
+
             torch.save(self.student.state_dict(), 'student.pth')
 
         # from matplotlib import pyplot as plt
@@ -124,15 +160,15 @@ if __name__ == '__main__':
     from torchvision.models import resnet50
     from Normalizations import ASRNormBN2d, ASRNormIN, ASRNormBN1d, ASRNormLN
 
-    a = resnet32(num_classes=10)
+    a = ShuffleV2(num_classes=10, norm_layer=ASRNormIN)
     from data import get_CIFAR100_train, get_CIFAR100_test, get_someset_loader, \
         get_CIFAR10_train, get_CIFAR10_test
 
-    train_loader = get_CIFAR10_train(batch_size=256, augment=True)
+    train_loader, validation_loader = get_CIFAR10_train(batch_size=256, augment=True)
     test_loader = get_CIFAR10_test(batch_size=256)
 
     w = Solver(a)
-    w.train(train_loader)
+    w.train(train_loader, validation_loader)
 
     from tester import test_acc
     test_acc(w.student, test_loader)
