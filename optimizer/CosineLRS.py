@@ -4,7 +4,7 @@ from math import cos, pi
 
 
 class CosineLRS():
-    def __init__(self, optimizer, max_epoch=300, lr_min=0, lr_max=0.1, warmup_epoch=20):
+    def __init__(self, optimizer, max_epoch=300, lr_min=0, lr_max=0.05, warmup_epoch=30):
         self.optimizer = optimizer
         self.max_epoch = max_epoch
         self.min_lr = lr_min

@@ -9,7 +9,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 def default_loss(x, y):
-    cross_entropy = F.cross_entropy(x, y)
+    cross_entropy = F.cross_entropy(x, y, label_smoothing=0.3)
     return cross_entropy
 
 
@@ -93,12 +93,14 @@ class Solver():
                 if fp16:
                     scaler.scale(loss).backward()
                     scaler.unscale_(self.optimizer)
-                    nn.utils.clip_grad_value_(self.student.parameters(), 0.1)
+                    # nn.utils.clip_grad_value_(self.student.parameters(), 0.1)
+                    nn.utils.clip_grad_norm(self.student.parameters(), max_norm=10)
                     scaler.step(self.optimizer)
                     scaler.update()
                 else:
                     loss.backward()
-                    nn.utils.clip_grad_value_(self.student.parameters(), 0.1)
+                    # nn.utils.clip_grad_value_(self.student.parameters(), 0.1)
+                    nn.utils.clip_grad_norm(self.student.parameters(), max_norm=10)
                     self.optimizer.step()
 
                 if step % 10 == 0:
