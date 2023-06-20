@@ -160,7 +160,9 @@ if __name__ == '__main__':
     from torchvision.models import resnet50
     from Normalizations import ASRNormBN2d, ASRNormIN, ASRNormBN1d, ASRNormLN
 
-    a = ShuffleV2(num_classes=10, norm_layer=ASRNormIN)
+    a = ShuffleV2(num_classes=10, norm_layer=ASRNormIN, flag=True)
+
+
     from data import get_CIFAR100_train, get_CIFAR100_test, get_someset_loader, \
         get_CIFAR10_train, get_CIFAR10_test
 

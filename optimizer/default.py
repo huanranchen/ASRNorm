@@ -3,9 +3,7 @@ from torch import nn
 from backbones import ShuffleV2
 
 
-def default_optimizer(model: nn.Module, lr=0.1, ) -> torch.optim.Optimizer:
-    if model == ShuffleV2():
-        lr = 0.05
+def default_optimizer(model: nn.Module, lr=0.1 ) -> torch.optim.Optimizer:
     return torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, nesterov=True)
 
 
