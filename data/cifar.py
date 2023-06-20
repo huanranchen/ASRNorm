@@ -215,6 +215,7 @@ def get_CIFAR10_train(batch_size=256,
                       pin_memory=True,
                       augment=False,
                       ):
+
     if not augment:
         transform = transforms.Compose([
             transforms.ToTensor(),
@@ -222,9 +223,13 @@ def get_CIFAR10_train(batch_size=256,
         ])
     else:
         transform = transforms.Compose([
+            transforms.RandomHorizontalFlip(),
+            transforms.ColorJitter(0.1, 0.1, 0.1, 0.1),
             transforms.AutoAugment(transforms.AutoAugmentPolicy.CIFAR10),
+            transforms.RandomRotation(5),
             transforms.ToTensor(),
-            transforms.Normalize(((0.4914, 0.4822, 0.4465)), (0.2470, 0.2435, 0.2616))
+            transforms.Normalize(((0.4914, 0.4822, 0.4465)), (0.2470, 0.2435, 0.2616)),
+
         ])
     set = CIFAR10('./resources/CIFAR10', train=True, download=True, transform=transform)
 
