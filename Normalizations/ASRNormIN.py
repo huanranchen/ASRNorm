@@ -75,7 +75,7 @@ class ASRNormIN(nn.Module):
 
         N, C, H, W = x.size()
         x_mean = torch.mean(x, dim=(2, 3))
-        x_std = torch.sqrt(torch.var(x, dim=(2, 3))) + self.eps
+        x_std = torch.sqrt(torch.var(x, dim=(2, 3)) + self.eps)
 
         # standardization
         x_standard_mean = self.standard_mean_decoder(self.standard_encoder(x_mean))

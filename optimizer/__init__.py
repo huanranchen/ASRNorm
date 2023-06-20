@@ -1,5 +1,6 @@
 from .FGSM import FGSM
+from .CosineLRS import CosineLRS
 from torch.optim import Adam, AdamW, SGD
 from .default import default_optimizer, default_lr_scheduler
 
-__all__ = ['FGSM', 'AdamW', 'SGD', 'Adam', 'default_lr_scheduler', 'default_optimizer']
+__all__ = ['FGSM', 'AdamW', 'SGD', 'Adam', 'default_lr_scheduler', 'default_optimizer', 'CosineLRS']

@@ -4,7 +4,7 @@ from typing import Callable
 from torch.nn import functional as F
 from tqdm import tqdm
 from torch.utils.data import DataLoader
-from optimizer import default_optimizer, default_lr_scheduler
+from optimizer import default_optimizer, default_lr_scheduler, CosineLRS
 from torch.utils.tensorboard import SummaryWriter
 
 
@@ -101,7 +101,8 @@ class Solver():
             train_loss /= len(loader)
             train_acc /= len(loader)
 
-            self.scheduler.step(train_loss)
+            # self.scheduler.step(train_loss)
+            self.scheduler.step(train_loss, epoch)
 
             print(f'epoch {epoch}, loss = {train_loss}, acc = {train_acc}')
             torch.save(self.student.state_dict(), 'student.pth')
@@ -119,11 +120,11 @@ class Solver():
 
 
 if __name__ == '__main__':
-    from backbones import mobilenetV2, ShuffleV2
+    from backbones import mobilenetV2, ShuffleV2, resnet32
     from torchvision.models import resnet50
-    from Normalizations import ASRNormBN2d, ASRNormIN, ASRNormRealBN
+    from Normalizations import ASRNormBN2d, ASRNormIN, ASRNormBN1d, ASRNormLN
 
-    a = ShuffleV2(num_classes=10, norm_layer=ASRNormRealBN)
+    a = resnet32(num_classes=10)
     from data import get_CIFAR100_train, get_CIFAR100_test, get_someset_loader, \
         get_CIFAR10_train, get_CIFAR10_test
 

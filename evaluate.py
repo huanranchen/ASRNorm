@@ -7,6 +7,6 @@ loader = get_CIFAR10_test()
 from backbones import resnet32, ShuffleV2
 from Normalizations import ASRNormBN2d, ASRNormIN
 
-model = ShuffleV2(num_classes=10, norm_layer=ASRNormBN)
+model = resnet32(num_classes=10)
 model.load_state_dict(torch.load('./student.pth'))
 test_acc(model, loader)
