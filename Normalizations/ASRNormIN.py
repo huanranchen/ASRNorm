@@ -81,13 +81,17 @@ class ASRNormIN(nn.Module):
         x_standard_mean = self.standard_mean_decoder(self.standard_encoder(x_mean))
         x_standard_std = self.standard_std_decoder(self.standard_encoder(x_std))
 
-        mean = self.lambda_mu * x_standard_mean + (1 - self.lambda_mu) * x_mean
-        std = self.lambda_sigma * x_standard_std + (1 - self.lambda_sigma) * x_std
+        lambda_sigma = self.sigmoid(self.lambda_sigma)
+        lambda_mu = self.sigmoid(self.lambda_mu)
+
+        mean = lambda_mu * x_standard_mean + (1 - lambda_mu) * x_mean
+        std = lambda_sigma * x_standard_std + (1 - lambda_sigma) * x_std
 
         mean = mean.reshape((N, C, 1, 1))
         std = std.reshape((N, C, 1, 1))
 
         x = (x - mean) / std
+
 
         # rescaling
         x_rescaling_beta = self.rescale_beta_decoder(self.rescale_encoder(x_mean))
