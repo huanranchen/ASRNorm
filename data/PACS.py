@@ -62,7 +62,7 @@ def get_pacs_dataset(target_domain, root="./data/pacs", download=True, augment=T
     return train_dataset, test_dataset
 
 
-def get_PACS_train(batch_size=32,
+def get_PACS_train(batch_size=128,
                    num_workers=8,
                    pin_memory=True,
                    augment=True,
@@ -74,7 +74,7 @@ def get_PACS_train(batch_size=32,
     return loader
 
 
-def get_PACS_test(batch_size=32,
+def get_PACS_test(batch_size=128,
                   num_workers=8,
                   pin_memory=True,
                   target_domain="A"

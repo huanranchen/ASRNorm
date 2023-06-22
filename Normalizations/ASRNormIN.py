@@ -92,7 +92,6 @@ class ASRNormIN(nn.Module):
 
         x = (x - mean) / std
 
-
         # rescaling
         x_rescaling_beta = self.rescale_beta_decoder(self.rescale_encoder(x_mean))
         x_rescaling_gamma = self.rescale_gamma_decoder(self.rescale_encoder(x_std))
