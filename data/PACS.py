@@ -20,14 +20,13 @@ class NPACS(PACS):
 
     def __getitem__(self, index):
         img, target = super(NPACS, self).__getitem__(index)
-        return img, target, str(index)
+        return img, target
 
 
 def get_pacs_dataset(target_domain, root="./data/pacs", download=True, augment=True):
     assert target_domain in ["P", "A", "C", "S"]
     test_transform = transforms.Compose(
         [
-            ResizeImage(224),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
@@ -35,9 +34,9 @@ def get_pacs_dataset(target_domain, root="./data/pacs", download=True, augment=T
     )
     train_transform = transforms.Compose(
         [
-            transforms.RandomResizedCrop(224, scale=(0.7, 1.0)),
-            # transforms.RandomHorizontalFlip(),
-            # transforms.ColorJitter(brightness=0.3, contrast=0.3, saturation=0.3, hue=0.3),
+            transforms.RandomResizedCrop((227, 227), scale=(0.7, 1.0)),
+            transforms.RandomHorizontalFlip(),
+            # transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
             # transforms.RandomGrayscale(),
             transforms.AutoAugment(),
             transforms.ToTensor(),

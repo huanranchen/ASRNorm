@@ -6,3 +6,4 @@ from .ShuffleNetv1 import *
 from .ShuffleNetv2 import *
 from .vgg import *
 from .wrn import *
+from .PyramidNet import *
