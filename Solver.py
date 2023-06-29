@@ -114,6 +114,29 @@ class Solver():
             torch.save(self.student.state_dict(), 'student.pth')
 
 
+def get_norm_layers(model:nn.Module, norm_name):
+    norm_layers = []
+    for module in model.modules():
+        if isinstance(module, norm_name):
+            norm_layers.append(module)
+        elif isinstance(module, nn.ModuleList):
+            for sub_module in module:
+                if isinstance(sub_module, norm_name):
+                    norm_layers.append(sub_module)
+        elif isinstance(module, nn.Sequential):
+            for sub_module in module.children():
+                norm_layers.append(sub_module)
+    return norm_layers
+
+
+def freeze_weights(model:nn.Module, norm_name):
+    for param in model.parameters():
+        param.requires_grad = False
+    for layer in get_norm_layers(model, norm_name):
+        for param in layer.parameters():
+            param.requires_grad = True
+
+
 if __name__ == '__main__':
     import torchvision
     from torchvision.models import resnet18
@@ -124,6 +147,9 @@ if __name__ == '__main__':
     a.fc = nn.Linear(512, 7)
     # # a = resnet18(num_classes=7)
     # a = pyramidnet164(num_classes=7)
+
+    freeze_weights(a, nn.BatchNorm2d)
+
 
     train_loader = get_PACS_train(batch_size=64, target_domain='P')
     test_loader = get_PACS_test(batch_size=256, target_domain='P')
