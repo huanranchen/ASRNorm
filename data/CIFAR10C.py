@@ -14,6 +14,16 @@ __all__ = [
     'get_cifar_10_c_loader',
 ]
 
+"""
+    level 1: brightness, contrast, defocus blur, elastic transform, fog
+    level 2: JPEG Compression(?), Pixelate(?), Gaussian Noise, Snow(?)
+    level 3: Frost, Gaussian Blur, Motion Blur
+    level 4: Zoom Blur, Speckle Noise, Impulse Noise, Glass Blur
+    level 5: Shot Noise, Spatter, Saturate
+"""
+
+# level1 10000 level2 10000~20000 level3 20000~30000 level4 30000~40000 level5 40000~50000
+
 corruptions = [
     'glass_blur',
     'gaussian_noise',

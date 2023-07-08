@@ -25,13 +25,29 @@ class NPACS(PACS):
 
 def get_pacs_dataset(target_domain, root="./data/pacs", download=True, augment=True):
     assert target_domain in ["P", "A", "C", "S"]
-    test_transform = transforms.Compose(
-        [
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
-        ]
-    )
+    if augment:
+        test_transform = transforms.Compose(
+            [
+                transforms.RandomResizedCrop((227, 227), scale=(0.7, 1.0)),
+                transforms.RandomHorizontalFlip(),
+                # transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
+                # transforms.RandomGrayscale(),
+                transforms.AutoAugment(),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+
+            ]
+        )
+    else:
+        test_transform = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+
+            ]
+        )
+
     train_transform = transforms.Compose(
         [
             transforms.RandomResizedCrop((227, 227), scale=(0.7, 1.0)),
@@ -62,23 +78,24 @@ def get_pacs_dataset(target_domain, root="./data/pacs", download=True, augment=T
 
 
 def get_PACS_train(batch_size=128,
-                   num_workers=8,
+                   num_workers=0,
                    pin_memory=True,
                    augment=True,
                    target_domain="A"
                    ):
-    set, _ = get_pacs_dataset(root='./resource/PACS', target_domain=target_domain, augment=augment)
+    set, _ = get_pacs_dataset(root='./resources/PACS', target_domain=target_domain, augment=augment)
     loader = DataLoader(set, batch_size=batch_size, num_workers=num_workers, pin_memory=pin_memory,
                         shuffle=True)
     return loader
 
 
 def get_PACS_test(batch_size=128,
-                  num_workers=8,
+                  num_workers=0,
                   pin_memory=True,
+                  augment=False,
                   target_domain="A"
                   ):
-    _, set = get_pacs_dataset(root='./resource/PACS', target_domain=target_domain)
+    _, set = get_pacs_dataset(root='./resources/PACS', target_domain=target_domain, augment=augment)
     loader = DataLoader(set, batch_size=batch_size, num_workers=num_workers, pin_memory=pin_memory,
                         shuffle=True)
     return loader

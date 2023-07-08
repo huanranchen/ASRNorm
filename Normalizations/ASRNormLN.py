@@ -5,7 +5,7 @@ from torch.nn import init
 
 
 class ASRNormLN(nn.Module):
-    def __init__(self, dim, eps=1e-6):
+    def __init__(self, dim, eps=1e-6, init_beta=None, init_gamma=None):
         '''
 
         :param dim: C of N,C,H,D
@@ -65,8 +65,16 @@ class ASRNormLN(nn.Module):
             init.constant_(self.lambda_sigma, self.sigmoid(torch.tensor(-3)))
             init.constant_(self.lambda_beta, self.sigmoid(torch.tensor(-5)))
             init.constant_(self.lambda_gamma, self.sigmoid(torch.tensor(-5)))
-            init.constant_(self.bias_beta, 0.)
-            init.constant_(self.bias_gamma, 1.)
+
+            if init_beta is None:
+                init.constant_(self.bias_beta, 0.)
+            else:
+                self.bias_beta.copy_(init_beta)
+            if init_gamma is None:
+                init.constant_(self.bias_gamma, 1.)
+            else:
+                self.bias_gamma.copy_(init_gamma)
+
 
 
 
@@ -105,3 +113,18 @@ class ASRNormLN(nn.Module):
         x = x * gamma + beta
 
         return x
+
+def set_module(model, name, norm_layer):
+    """Replace module of model by name with multi-level path"""
+    path = name.split('.')
+    cur = model
+    for p in path[:-1]:
+        cur = getattr(cur, p)
+    setattr(cur, path[-1], norm_layer)
+
+
+# 先试试行不行，如果行，再进行修改
+def build_ASRNormLN(model:nn.Module, init=False):
+    for name, module in model.named_modules():
+        if isinstance(module, nn.BatchNorm2d):
+            set_module(model, name, ASRNormLN(module.num_features, init_beta=(module.bias if init else None), init_gamma=(module.weight if init else None)))

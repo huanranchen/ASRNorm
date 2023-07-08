@@ -16,6 +16,8 @@ import operator
 import time
 import logging
 from enum import Enum
+
+
 def matches_module_pattern(pattern: Iterable[Type], node: fx.Node, modules: Dict[str, Any]):
     if len(node.args) == 0:
         return False

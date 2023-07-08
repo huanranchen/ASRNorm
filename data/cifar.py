@@ -214,6 +214,7 @@ def get_CIFAR10_train(batch_size=256,
                       num_workers=8,
                       pin_memory=True,
                       augment=False,
+                      validate=False
                       ):
 
     if not augment:
@@ -233,17 +234,23 @@ def get_CIFAR10_train(batch_size=256,
         ])
     set = CIFAR10('./resources/CIFAR10', train=True, download=True, transform=transform)
 
-    train_size = int(0.8 * len(set))
-    validation_size = int(0.2 * len(set))
+    if validate:
+        train_size = int(0.8 * len(set))
+        validation_size = int(0.2 * len(set))
 
-    train_datasets = random_split(set, [train_size, validation_size])
-    train_set, valiation_set = train_datasets
+        train_datasets = random_split(set, [train_size, validation_size])
+        train_set, valiation_set = train_datasets
 
-    train_loader = DataLoader(train_set, batch_size=batch_size, num_workers=num_workers, pin_memory=pin_memory,
-                        shuffle=True)
-    validation_loader = DataLoader(valiation_set, batch_size=batch_size, num_workers=num_workers, pin_memory=pin_memory,
-                        shuffle=True)
-    return train_loader, validation_loader
+        train_loader = DataLoader(train_set, batch_size=batch_size, num_workers=num_workers, pin_memory=pin_memory,
+                            shuffle=True)
+        validation_loader = DataLoader(valiation_set, batch_size=batch_size, num_workers=num_workers, pin_memory=pin_memory,
+                            shuffle=True)
+        return train_loader, validation_loader
+
+    else:
+        loader = DataLoader(set, batch_size=batch_size, num_workers=num_workers, pin_memory=pin_memory,
+                            shuffle=True)
+        return loader
 
 
 def get_CIFAR10_test(batch_size=256,
