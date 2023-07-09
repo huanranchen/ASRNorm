@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from torch import optim
 from typing import Callable
 from torch.nn import functional as F
 from tqdm import tqdm
@@ -24,6 +25,8 @@ class Solver():
         self.criterion = loss_function if loss_function is not None else default_loss
         self.optimizer = optimizer if optimizer is not None else default_optimizer(self.student)
         self.scheduler = scheduler if scheduler is not None else ALRS(self.optimizer)
+        # self.optimizer = optim.SGD(self.student.parameters(), lr=0.1, momentum=0.9, weight_decay=0.0001)
+        # self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[150, 250], gamma=0.1)
         self.device = device
 
         # initialization
@@ -54,10 +57,12 @@ class Solver():
                 if fp16:
                     with autocast():
                         student_out = self.student(x)  # N, 60
+                        # student_out = self.student(x, y, epoch)
                         _, pre = torch.max(student_out, dim=1)
                         loss = self.criterion(student_out, y)
                 else:
                     student_out = self.student(x)  # N, 60
+                    # student_out = self.student(x, y, epoch)
                     _, pre = torch.max(student_out, dim=1)
                     loss = self.criterion(student_out, y)
                 if pre.shape != y.shape:
@@ -92,6 +97,7 @@ class Solver():
                 for step, (x, y) in enumerate(vbar, 1):
                     x, y = x.to(self.device), y.to(self.device)
                     student_out = self.student(x)  # N, 60
+                    # student_out = self.student(x, y, epoch)
                     _, pre = torch.max(student_out, dim=1)
                     loss = self.criterion(student_out, y)
                     if pre.shape != y.shape:
@@ -106,6 +112,7 @@ class Solver():
                 validation_acc /= len(validation_loader)
 
             self.scheduler.step(train_loss, epoch)
+            # self.optimizer.step()
 
             print(f'epoch {epoch}, train_loss = {train_loss}, train_acc = {train_acc}')
             print(f'epoch {epoch}, validation_loss = {validation_loss}, validation_acc = {validation_acc}')
@@ -114,45 +121,23 @@ class Solver():
             torch.save(self.student.state_dict(), 'student.pth')
 
 
-def get_norm_layers(model:nn.Module, norm_name):
-    norm_layers = []
-    for module in model.modules():
-        if isinstance(module, norm_name):
-            norm_layers.append(module)
-        elif isinstance(module, nn.ModuleList):
-            for sub_module in module:
-                if isinstance(sub_module, norm_name):
-                    norm_layers.append(sub_module)
-        elif isinstance(module, nn.Sequential):
-            for sub_module in module.children():
-                norm_layers.append(sub_module)
-    return norm_layers
-
-
-def freeze_weights(model:nn.Module, norm_name):
-    for param in model.parameters():
-        param.requires_grad = False
-    for layer in get_norm_layers(model, norm_name):
-        for param in layer.parameters():
-            param.requires_grad = True
-
-
 if __name__ == '__main__':
     import torchvision
+    from Normalizations import ASRNormBN2d, ASRNormIN, build_ASRNormIN, build_ASRNormBN2d
     from torchvision.models import resnet18
-    from data import get_PACS_train, get_PACS_test
-    from backbones import pyramidnet272, pyramidnet164
+    from data import get_PACS_train, get_PACS_test, get_CIFAR100_train, get_cifar_10_c_loader, get_CIFAR100_test
+    from backbones import resnet56, resnet110, wrn_40_2, wrn_16_2, vgg16_bn, vgg19_bn, pyramidnet164, pyramidnet272, resnet32
 
-    a = resnet18(weights=torchvision.models.ResNet18_Weights.IMAGENET1K_V1)
-    a.fc = nn.Linear(512, 7)
-    # # a = resnet18(num_classes=7)
-    # a = pyramidnet164(num_classes=7)
-
-    freeze_weights(a, nn.BatchNorm2d)
+    a = resnet32(num_classes=100)
 
 
-    train_loader = get_PACS_train(batch_size=64, target_domain='P')
-    test_loader = get_PACS_test(batch_size=256, target_domain='P')
+    # freeze_weights(a, nn.BatchNorm2d)
+    # build_ASRNormIN(a, True)
+    # build_ASRNormBN2d(a, True)
+
+    train_loader = get_CIFAR100_train(batch_size=128, augment=True)
+    test_loader = get_CIFAR100_test(batch_size=256)
+
 
     w = Solver(a)
     w.train(train_loader, test_loader)
