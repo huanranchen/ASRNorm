@@ -46,7 +46,7 @@ def get_transform(augment=False):
 
 
 def get_imagenet_loader(
-        root='/cephfs-thu/LargeData/ImageNet/',
+        root='resources/ImageNet/',
         split='val',
         augment=False,
         batch_size=1,
@@ -65,7 +65,7 @@ def get_imagenet_loader(
 def get_imagenet10_loader(
         target_class=(0, 100, 200, 300, 400, 500, 600, 700, 800, 900),
         maximum_images=None,
-        root='/cephfs-thu/LargeData/ImageNet/',
+        root='resources/ImageNet/',
         split='val',
         augment=False,
         batch_size=1,

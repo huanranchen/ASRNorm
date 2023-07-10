@@ -113,8 +113,8 @@ class ASRNormIN(nn.Module):
         beta = self.lambda_beta * x_rescaling_beta + self.bias_beta
         gamma = self.lambda_gamma * x_rescaling_gamma + self.bias_gamma
         # else:
-        beta = x_rescaling_beta + self.bias_beta
-        gamma = x_rescaling_gamma + self.bias_gamma
+        # beta = x_rescaling_beta + self.bias_beta
+        # gamma = x_rescaling_gamma + self.bias_gamma
 
         beta = beta.reshape((N, C, 1, 1))
         gamma = gamma.reshape((N, C, 1, 1))
