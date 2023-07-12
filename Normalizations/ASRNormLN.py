@@ -92,8 +92,11 @@ class ASRNormLN(nn.Module):
         x_standard_mean = self.standard_mean_decoder(self.standard_encoder(self.drop_out(x_mean.view(1, -1)))).squeeze()
         x_standard_std = self.standard_std_decoder(self.standard_encoder(self.drop_out(x_std.view(1, -1)))).squeeze()
 
-        mean = self.lambda_mu * x_standard_mean + (1 - self.lambda_mu) * x_mean
-        std = self.lambda_sigma * x_standard_std + (1 - self.lambda_sigma) * x_std
+        lambda_sigma = self.sigmoid(self.lambda_sigma)
+        lambda_mu = self.sigmoid(self.lambda_mu)
+
+        mean = lambda_mu * x_standard_mean + (1 - lambda_mu) * x_mean
+        std = lambda_sigma * x_standard_std + (1 - lambda_sigma) * x_std
 
         mean = mean.reshape((N, 1, 1, 1))
         std = std.reshape((N, 1, 1, 1))
