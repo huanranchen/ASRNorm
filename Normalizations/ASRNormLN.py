@@ -3,6 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import init
 
+"""
+    ASRNormLN exists bugs, batchsize cannot match the input_channel of every block
+"""
+
 
 class ASRNormLN(nn.Module):
     def __init__(self, dim, eps=1e-6, init_beta=None, init_gamma=None):
